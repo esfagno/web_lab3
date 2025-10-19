@@ -17,15 +17,23 @@
                 <div class="results-scroll">
                     <p:dataTable id="resultsTable" value="#{resultsManager.allResults}" var="res"
                                  style="width:100%; min-width:100%;">
-                        <p:column headerText="X" style="text-align:center;">#{res.x}</p:column>
-                        <p:column headerText="Y" style="text-align:center;">#{res.y}</p:column>
-                        <p:column headerText="R" style="text-align:center;">#{res.r}</p:column>
+                        <p:column headerText="X" style="text-align:center;">
+                            <h:outputText value="#{res.x}" />
+                        </p:column>
+                        <p:column headerText="Y" style="text-align:center;">
+                            <h:outputText value="#{res.y}" />
+                        </p:column>
+                        <p:column headerText="R" style="text-align:center;">
+                            <h:outputText value="#{res.r}" />
+                        </p:column>
                         <p:column headerText="Result" style="text-align:center;">
                             <span style="color: #{res.hit ? 'green' : 'red'};">
                                 #{res.hit ? 'hit' : 'miss'}
                             </span>
                         </p:column>
-                        <p:column headerText="Time" style="text-align:center;">#{res.timestamp}</p:column>
+                        <p:column headerText="Time" style="text-align:center;">
+                            <h:outputText value="#{res.timestamp}" />
+                        </p:column>
                     </p:dataTable>
                 </div>
             </div>
@@ -40,7 +48,7 @@
                     <p:inputNumber id="xValue" value="#{mainBean.x}"
                                    minValue="-4" maxValue="4" decimalPlaces="0"
                                    placeholder="-4 ... 4">
-                        <p:ajax event="blur" />
+                        <p:ajax event="blur" oncomplete="redrawCanvas()" />
                     </p:inputNumber>
                 </div>
 
@@ -49,7 +57,7 @@
                     <p:inputNumber id="yValue" value="#{mainBean.y}"
                                    minValue="-5" maxValue="3" decimalPlaces="2"
                                    placeholder="(-5 ... 3)">
-                        <p:ajax event="blur" />
+                        <p:ajax event="blur" oncomplete="redrawCanvas()" />
                     </p:inputNumber>
                 </div>
 
@@ -58,7 +66,7 @@
                     <p:inputNumber id="rValue" value="#{mainBean.r}"
                                    minValue="1" maxValue="4" decimalPlaces="0"
                                    placeholder="1...4">
-                        <p:ajax event="blur" />
+                        <p:ajax event="blur" oncomplete="redrawCanvas()" />
                     </p:inputNumber>
                 </div>
 
@@ -66,40 +74,27 @@
                                  action="#{mainBean.checkPoint}"
                                  process="@form"
                                  update="messages, resultsTable"
-                                 oncomplete="redrawCanvas()" />
+                                 oncomplete="handleAjaxComplete()" />
             </div>
         </h:form>
-
 
         <h:form id="canvasClickForm">
             <h:inputHidden id="canvasX" value="#{mainBean.x}" />
             <h:inputHidden id="canvasY" value="#{mainBean.y}" />
             <h:inputHidden id="canvasR" value="#{mainBean.r}" />
-            <h:commandButton id="submitCanvasClick" style="display:none">
-                <f:ajax
-                        execute="@form"
-                        listener="#{mainBean.checkPoint}"
-                        render="messages, resultsTable"
-                        oncomplete="redrawCanvas()" />
-            </h:commandButton>
+            <p:commandButton id="submitCanvasClick" style="display:none"
+                             action="#{mainBean.checkPoint}"
+                             process="@form"
+                             update="messages, resultsTable"
+                             oncomplete="handleAjaxComplete()" />
         </h:form>
-
-        <script>
-            const results = [
-                <ui:repeat value="#{resultsManager.allResults}" var="res">
-                    {x: #{res.x}, y: #{res.y}, r: #{res.r}, hit: #{res.hit}},
-                </ui:repeat>
-            ];
-        </script>
 
         <h:outputScript name="js/script.js" />
 
         <script>
-            function redrawCanvas() {
-                if (window.coordinatePlane) {
-                    window.coordinatePlane.draw();
-                }
-            }
+            document.addEventListener('DOMContentLoaded', function() {
+                setTimeout(redrawCanvas, 100);
+            });
         </script>
     </h:body>
 </f:view>

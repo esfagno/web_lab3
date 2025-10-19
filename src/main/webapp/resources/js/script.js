@@ -21,7 +21,8 @@ const CONFIG = {
         Y_INPUT: 'pointForm:yValue_input',
         R_SELECT: 'pointForm:rValue',
         FORM: 'pointForm',
-        R_INPUT: 'pointForm:rValue_input'
+        R_INPUT: 'pointForm:rValue_input',
+        RESULTS_TABLE: 'resultsTable'
     },
     TEXT: {
         VALIDATION: {
@@ -60,6 +61,38 @@ const Utils = {
             clearTimeout(timeout);
             timeout = setTimeout(() => func(...args), delay);
         };
+    },
+
+    parseResultsFromTable() {
+        const results = [];
+        const table = document.getElementById(CONFIG.SELECTORS.RESULTS_TABLE);
+
+        if (!table) return results;
+
+        const rows = table.querySelectorAll('tr:not(.ui-datatable-header)');
+
+        rows.forEach(row => {
+            const cells = row.querySelectorAll('td');
+            if (cells.length >= 5) {
+                try {
+                    const result = {
+                        x: parseFloat(cells[0].textContent.trim()),
+                        y: parseFloat(cells[1].textContent.trim()),
+                        r: parseFloat(cells[2].textContent.trim()),
+                        hit: cells[3].textContent.trim().toLowerCase() === 'hit',
+                        timestamp: cells[4].textContent.trim()
+                    };
+
+                    if (!isNaN(result.x) && !isNaN(result.y) && !isNaN(result.r)) {
+                        results.push(result);
+                    }
+                } catch (e) {
+                    console.warn('Error parsing table row:', e);
+                }
+            }
+        });
+
+        return results;
     }
 };
 
@@ -348,13 +381,14 @@ class CoordinatePlane {
     }
 
     drawHistoryPoints() {
-        if (typeof results === 'undefined' || results.length === 0) return;
+        const currentResults = Utils.parseResultsFromTable();
+        if (currentResults.length === 0) return;
 
         const rInput = document.getElementById(CONFIG.SELECTORS.R_INPUT);
         const currentR = rInput ? parseFloat(rInput.value) : 1;
         const baseScale = CONFIG.CANVAS.SCALE;
 
-        results.forEach(p => {
+        currentResults.forEach(p => {
             if (!p.r || p.r === 0) return;
 
             const color = p.hit ? CONFIG.CANVAS.HIT_COLOR : CONFIG.CANVAS.MISS_COLOR;
@@ -388,6 +422,10 @@ function redrawCanvas() {
     if (window.coordinatePlane) {
         window.coordinatePlane.draw();
     }
+}
+
+function handleAjaxComplete() {
+    redrawCanvas();
 }
 
 document.addEventListener('DOMContentLoaded', () => {
