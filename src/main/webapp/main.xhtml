@@ -15,38 +15,45 @@
                     style="color: red; text-align: center; margin-bottom: 15px;"/>
 
         <div class="content-container">
-            <div class="table-container">
-                <div class="results-scroll">
-                    <p:dataTable id="resultsTable"
-                                 value="#{resultsManager.allResults}"
-                                 var="res"
-                                 style="width:100%; min-width:100%;">
+            <!-- Левая панель с кнопкой и таблицей -->
+            <div class="left-panel">
+                <div class="back-link-wrapper">
+                    <h:link value="На главную" outcome="start" styleClass="back-button"/>
+                </div>
+                <div class="table-container">
+                    <div class="results-scroll">
+                        <p:dataTable id="resultsTable"
+                                     value="#{resultsManager.allResults}"
+                                     var="res"
+                                     style="width:100%; min-width:100%;">
 
-                        <p:column headerText="X" style="text-align:center;">
-                            <h:outputText value="#{res.x}"/>
-                        </p:column>
+                            <p:column headerText="X" style="text-align:center;">
+                                <h:outputText value="#{res.x}"/>
+                            </p:column>
 
-                        <p:column headerText="Y" style="text-align:center;">
-                            <h:outputText value="#{res.y}"/>
-                        </p:column>
+                            <p:column headerText="Y" style="text-align:center;">
+                                <h:outputText value="#{res.y}"/>
+                            </p:column>
 
-                        <p:column headerText="R" style="text-align:center;">
-                            <h:outputText value="#{res.r}"/>
-                        </p:column>
+                            <p:column headerText="R" style="text-align:center;">
+                                <h:outputText value="#{res.r}"/>
+                            </p:column>
 
-                        <p:column headerText="Result" style="text-align:center;">
+                            <p:column headerText="Result" style="text-align:center;">
                     <span style="color: #{res.hit ? 'green' : 'red'};">
                         #{res.hit ? 'hit' : 'miss'}
                     </span>
-                        </p:column>
+                            </p:column>
 
-                        <p:column headerText="Time" style="text-align:center;">
-                            <h:outputText value="#{res.timestamp}"/>
-                        </p:column>
-                    </p:dataTable>
+                            <p:column headerText="Time" style="text-align:center;">
+                                <h:outputText value="#{res.timestamp}"/>
+                            </p:column>
+                        </p:dataTable>
+                    </div>
                 </div>
             </div>
 
+            <!-- Правая панель с графиком и формой -->
             <div class="right-panel">
                 <div class="canvas-wrapper">
                     <div class="canvas-wrapper-inner">
@@ -129,5 +136,6 @@
             });
         </script>
     </h:body>
+
 </f:view>
 </html>
