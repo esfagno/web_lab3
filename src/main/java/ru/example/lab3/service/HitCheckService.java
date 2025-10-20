@@ -1,10 +1,10 @@
 package ru.example.lab3.service;
 
+import jakarta.enterprise.context.ApplicationScoped;
 import ru.example.lab3.model.HitResult;
 import ru.example.lab3.validation.InputValidator;
 import ru.example.lab3.validation.ValidationException;
 
-import jakarta.enterprise.context.ApplicationScoped;
 import java.util.logging.Logger;
 
 @ApplicationScoped

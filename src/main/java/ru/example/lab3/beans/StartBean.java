@@ -1,7 +1,8 @@
 package ru.example.lab3.beans;
 
-import jakarta.inject.Named;
 import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Named;
+
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 

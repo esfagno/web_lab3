@@ -1,38 +1,47 @@
 <!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml"
-      xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
-      xmlns:h="http://xmlns.jcp.org/jsf/html"
+<html xmlns:h="http://xmlns.jcp.org/jsf/html"
       xmlns:f="http://xmlns.jcp.org/jsf/core"
-      xmlns:p="http://primefaces.org/ui">
+      xmlns:p="http://primefaces.org/ui"
+      xmlns="http://www.w3.org/1999/xhtml">
+
 <f:view locale="en">
     <h:head>
         <title>Проверка попадания точки</title>
-        <h:outputStylesheet name="css/style.css" />
+        <h:outputStylesheet name="css/style.css"/>
     </h:head>
+
     <h:body>
-        <h:messages id="messages" style="color: red; text-align: center; margin-bottom: 15px;" />
+        <h:messages id="messages"
+                    style="color: red; text-align: center; margin-bottom: 15px;"/>
 
         <div class="content-container">
             <div class="table-container">
                 <div class="results-scroll">
-                    <p:dataTable id="resultsTable" value="#{resultsManager.allResults}" var="res"
+                    <p:dataTable id="resultsTable"
+                                 value="#{resultsManager.allResults}"
+                                 var="res"
                                  style="width:100%; min-width:100%;">
+
                         <p:column headerText="X" style="text-align:center;">
-                            <h:outputText value="#{res.x}" />
+                            <h:outputText value="#{res.x}"/>
                         </p:column>
+
                         <p:column headerText="Y" style="text-align:center;">
-                            <h:outputText value="#{res.y}" />
+                            <h:outputText value="#{res.y}"/>
                         </p:column>
+
                         <p:column headerText="R" style="text-align:center;">
-                            <h:outputText value="#{res.r}" />
+                            <h:outputText value="#{res.r}"/>
                         </p:column>
+
                         <p:column headerText="Result" style="text-align:center;">
                             <span style="color: #{res.hit ? 'green' : 'red'};">
                                 #{res.hit ? 'hit' : 'miss'}
                             </span>
                         </p:column>
+
                         <p:column headerText="Time" style="text-align:center;">
-                            <h:outputText value="#{res.timestamp}" />
+                            <h:outputText value="#{res.timestamp}"/>
                         </p:column>
                     </p:dataTable>
                 </div>
@@ -43,56 +52,75 @@
 
         <h:form id="pointForm">
             <div class="form-container">
-                <div class="input-container">
-                    <label for="xValue">X:</label>
-                    <p:inputNumber id="xValue" value="#{mainBean.x}"
-                                   minValue="-4" maxValue="4" decimalPlaces="0"
-                                   placeholder="-4 ... 4">
-                        <p:ajax event="blur" oncomplete="redrawCanvas()" />
-                    </p:inputNumber>
+                <div class="input-container x-radio-group">
+                    <label>X:</label>
+                    <p:selectOneRadio id="xValue"
+                                      value="#{mainBean.x}"
+                                      layout="grid"
+                                      columns="3"
+                                      required="true"
+                                      requiredMessage="Пожалуйста, выберите X.">
+                        <f:selectItems value="#{[-5,-4,-3,-2,-1,0,1,2,3]}"/>
+                        <p:ajax event="change" oncomplete="redrawCanvas()"/>
+                    </p:selectOneRadio>
+                    <p:message for="xValue" display="text"/>
                 </div>
 
                 <div class="input-container">
                     <label for="yValue">Y:</label>
-                    <p:inputNumber id="yValue" value="#{mainBean.y}"
-                                   minValue="-5" maxValue="3" decimalPlaces="2"
-                                   placeholder="(-5 ... 3)">
-                        <p:ajax event="blur" oncomplete="redrawCanvas()" />
+                    <p:inputNumber id="yValue"
+                                   value="#{mainBean.y}"
+                                   minValue="-5"
+                                   maxValue="3"
+                                   decimalPlaces="2"
+                                   placeholder="(-5 ... 3)"
+                                   required="true"
+                                   requiredMessage="Поле Y обязательно.">
+                        <f:validateDoubleRange minimum="#{-5}" maximum="#{3}"/>
+                        <p:ajax event="blur" oncomplete="redrawCanvas()"/>
                     </p:inputNumber>
+                    <p:message for="yValue" display="text"/>
                 </div>
 
                 <div class="input-container">
                     <label for="rValue">R:</label>
-                    <p:inputNumber id="rValue" value="#{mainBean.r}"
-                                   minValue="1" maxValue="4" decimalPlaces="0"
-                                   placeholder="1...4">
-                        <p:ajax event="blur" oncomplete="redrawCanvas()" />
+                    <p:inputNumber id="rValue"
+                                   value="#{mainBean.r}"
+                                   minValue="2"
+                                   maxValue="5"
+                                   decimalPlaces="2"
+                                   placeholder="(2 ... 5)"
+                                   required="true"
+                                   requiredMessage="Поле R обязательно.">
+                        <f:validateDoubleRange minimum="#{2}" maximum="#{5}"/>
+                        <p:ajax event="blur" oncomplete="redrawCanvas()"/>
                     </p:inputNumber>
+                    <p:message for="rValue" display="text"/>
                 </div>
 
                 <p:commandButton value="Submit"
                                  action="#{mainBean.checkPoint}"
-                                 process="@form"
+                                 process="xValue yValue rValue"
                                  update="messages, resultsTable"
-                                 oncomplete="handleAjaxComplete()" />
+                                 oncomplete="handleAjaxComplete()"/>
+
+                <p:remoteCommand name="sendCanvasClick"
+                                 action="#{mainBean.handleCanvasClick}"
+                                 process="@this"
+                                 update="messages, resultsTable, pointForm:xValue, pointForm:yValue, pointForm:rValue"
+                                 oncomplete="handleAjaxComplete()"
+                                 global="false">
+                    <f:param name="clickedX" value=""/>
+                    <f:param name="clickedY" value=""/>
+                    <f:param name="clickedR" value=""/>
+                </p:remoteCommand>
             </div>
         </h:form>
 
-        <h:form id="canvasClickForm">
-            <h:inputHidden id="canvasX" value="#{mainBean.x}" />
-            <h:inputHidden id="canvasY" value="#{mainBean.y}" />
-            <h:inputHidden id="canvasR" value="#{mainBean.r}" />
-            <p:commandButton id="submitCanvasClick" style="display:none"
-                             action="#{mainBean.checkPoint}"
-                             process="@form"
-                             update="messages, resultsTable"
-                             oncomplete="handleAjaxComplete()" />
-        </h:form>
-
-        <h:outputScript name="js/script.js" />
+        <h:outputScript name="js/script.js"/>
 
         <script>
-            document.addEventListener('DOMContentLoaded', function() {
+            document.addEventListener('DOMContentLoaded', function () {
                 setTimeout(redrawCanvas, 100);
             });
         </script>

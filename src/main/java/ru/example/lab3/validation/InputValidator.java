@@ -1,7 +1,7 @@
 package ru.example.lab3.validation;
 
-import ru.example.lab3.util.Constants;
 import lombok.RequiredArgsConstructor;
+import ru.example.lab3.util.Constants;
 
 @RequiredArgsConstructor
 public class InputValidator {
@@ -16,7 +16,7 @@ public class InputValidator {
     }
 
     private void validateR() {
-        if (r != Math.floor(r) || r < Constants.R_MIN || r > Constants.R_MAX) {
+        if (r <= Constants.R_MIN || r >= Constants.R_MAX) {
             throw ValidationException.forR();
         }
     }

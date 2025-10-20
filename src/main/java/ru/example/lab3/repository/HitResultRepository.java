@@ -1,11 +1,11 @@
 package ru.example.lab3.repository;
 
-import jakarta.transaction.Transactional;
-import ru.example.lab3.model.HitResult;
-
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import jakarta.transaction.Transactional;
+import ru.example.lab3.model.HitResult;
+
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -13,10 +13,9 @@ import java.util.logging.Logger;
 @Transactional
 public class HitResultRepository {
 
+    private static final Logger logger = Logger.getLogger(HitResultRepository.class.getName());
     @PersistenceContext
     private EntityManager em;
-
-    private static final Logger logger = Logger.getLogger(HitResultRepository.class.getName());
 
     public void save(HitResult result) {
         logger.info(() -> "Saving to database: " + result);

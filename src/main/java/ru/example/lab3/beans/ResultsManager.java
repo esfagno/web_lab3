@@ -1,11 +1,11 @@
 package ru.example.lab3.beans;
 
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
 import ru.example.lab3.model.HitResult;
 import ru.example.lab3.repository.HitResultRepository;
 
-import jakarta.inject.Named;
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -13,10 +13,9 @@ import java.util.logging.Logger;
 @ApplicationScoped
 public class ResultsManager {
 
+    private static final Logger logger = Logger.getLogger(ResultsManager.class.getName());
     @Inject
     private HitResultRepository repository;
-
-    private static final Logger logger = Logger.getLogger(ResultsManager.class.getName());
 
     public void addResult(HitResult result) {
         logger.info(() -> "Adding result to repository: " + result);

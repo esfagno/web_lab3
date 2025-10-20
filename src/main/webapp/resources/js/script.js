@@ -13,21 +13,22 @@ const CONFIG = {
     VALIDATION: {
         Y_MIN: -5,
         Y_MAX: 3,
-        X_VALUES: [-4, -3, -2, -1, 0, 1, 2, 3, 4]
+        X_VALUES: [-5, -4, -3, -2, -1, 0, 1, 2, 3]
     },
     SELECTORS: {
         CANVAS: 'coordinatePlane',
-        X_SELECT: 'pointForm:xValue',
+        X_RADIO_GROUP: 'pointForm:xValue',
         Y_INPUT: 'pointForm:yValue_input',
-        R_SELECT: 'pointForm:rValue',
-        FORM: 'pointForm',
         R_INPUT: 'pointForm:rValue_input',
+        FORM: 'pointForm',
         RESULTS_TABLE: 'resultsTable'
     },
     TEXT: {
         VALIDATION: {
             NUMBER_REQUIRED: 'Y должно быть числом',
-            RANGE_REQUIRED: 'Y должен быть строго в диапазоне (-5; 3)'
+            RANGE_REQUIRED: 'Y должен быть строго в диапазоне (-5; 3)',
+            R_RANGE_REQUIRED: 'R должен быть строго в диапазоне (2; 5)',
+            R_NUMBER_REQUIRED: 'R должно быть числом'
         }
     },
     TIMING: {
@@ -52,7 +53,7 @@ const Utils = {
     },
 
     isInRange(value, min, max) {
-        return value > min && value < max;
+        return value >= min && value <= max;
     },
 
     debounce(func, delay) {
@@ -140,14 +141,14 @@ class FormValidator {
             return true;
         }
 
-        if (!/^-?\d+$/.test(value) || isNaN(parseInt(value, 10))) {
-            this.showError(container, 'R должно быть целым числом');
+        if (!/^-?\d*\.?\d*$/.test(value) || isNaN(parseFloat(value))) {
+            this.showError(container, CONFIG.TEXT.VALIDATION.R_NUMBER_REQUIRED);
             return false;
         }
 
-        const num = parseInt(value, 10);
-        if (num < 1 || num > 4) {
-            this.showError(container, 'R должен быть от 1 до 4');
+        const num = parseFloat(value);
+        if (!(num > 2 && num < 5)) {
+            this.showError(container, CONFIG.TEXT.VALIDATION.R_RANGE_REQUIRED);
             return false;
         }
 
@@ -209,6 +210,7 @@ class FormValidator {
     }
 }
 
+
 class CoordinatePlane {
     constructor(canvasId) {
         this.canvas = document.getElementById(canvasId);
@@ -218,6 +220,7 @@ class CoordinatePlane {
         this.centerX = CONFIG.CANVAS.WIDTH / 2;
         this.centerY = CONFIG.CANVAS.HEIGHT / 2;
         this.scale = CONFIG.CANVAS.SCALE;
+        this.yInput = document.getElementById(CONFIG.SELECTORS.Y_INPUT);
         this.setup();
     }
 
@@ -238,40 +241,72 @@ class CoordinatePlane {
         const roundedX = Utils.roundToNearest(xGraph, CONFIG.VALIDATION.X_VALUES);
         const yValue = parseFloat(yGraph.toFixed(2));
 
-        if (isNaN(roundedX) || isNaN(yValue)) return;
+        if (isNaN(roundedX) || isNaN(yValue)) {
+            console.error("Invalid coordinates from click.");
+            return;
+        }
 
         if (!Utils.isInRange(yValue, CONFIG.VALIDATION.Y_MIN, CONFIG.VALIDATION.Y_MAX)) {
             alert('Y должен быть строго в диапазоне (-5; 3)');
             return;
         }
 
-        const rInput = document.getElementById('pointForm:rValue_input');
-        const rVal = rInput ? parseFloat(rInput.value) : NaN;
-        if (isNaN(rVal) || rVal < 1 || rVal > 4) {
-            alert('Сначала выберите корректное R (1..4)');
+        const rInputElement = document.getElementById(CONFIG.SELECTORS.R_INPUT);
+        if (!rInputElement) {
+            console.error('R input element not found!');
+            alert('Ошибка: поле R не найдено.');
             return;
         }
 
-        const xWidget = PrimeFaces.getWidgetById('pointForm:xValue');
-        const yWidget = PrimeFaces.getWidgetById('pointForm:yValue');
-        const rWidget = PrimeFaces.getWidgetById('pointForm:rValue');
+        const rValStr = rInputElement.value.trim();
+        if (rValStr === '') {
+            alert('Сначала введите R');
+            return;
+        }
 
-        if (xWidget) xWidget.setValue(roundedX);
-        if (yWidget) yWidget.setValue(yValue);
-        if (rWidget) rWidget.setValue(rVal);
+        const rVal = parseFloat(rValStr);
+        if (isNaN(rVal) || rVal <= 2 || rVal >= 5) {
+            alert('Введите корректное R (2..5)');
+            return;
+        }
 
-        const xHidden = document.getElementById('canvasClickForm:canvasX');
-        const yHidden = document.getElementById('canvasClickForm:canvasY');
-        const rHidden = document.getElementById('canvasClickForm:canvasR');
-        const submitBtn = document.getElementById('canvasClickForm:submitCanvasClick');
 
-        if (xHidden && yHidden && rHidden && submitBtn) {
-            xHidden.value = roundedX;
-            yHidden.value = yValue;
-            rHidden.value = rVal;
-            submitBtn.click();
+        const xRadioGroupName = CONFIG.SELECTORS.X_RADIO_GROUP;
+        const radioButtons = document.querySelectorAll(`input[name="${xRadioGroupName}"]`);
+        radioButtons.forEach(radio => {
+            if (parseFloat(radio.value) === roundedX) {
+                radio.checked = true;
+                radio.dispatchEvent(new Event('change', {bubbles: true}));
+            } else {
+                radio.checked = false;
+            }
+        });
+
+        if (this.yInput) {
+            this.yInput.value = yValue;
+            this.yInput.dispatchEvent(new Event('input', {bubbles: true}));
+            this.yInput.dispatchEvent(new Event('blur', {bubbles: true}));
         } else {
-            console.error('Canvas form elements not found!');
+            const yInputElement = document.getElementById(CONFIG.SELECTORS.Y_INPUT);
+            if (yInputElement) {
+                yInputElement.value = yValue;
+                yInputElement.dispatchEvent(new Event('input', {bubbles: true}));
+                yInputElement.dispatchEvent(new Event('blur', {bubbles: true}));
+            }
+        }
+
+        rInputElement.value = rVal;
+        rInputElement.dispatchEvent(new Event('input', {bubbles: true}));
+        rInputElement.dispatchEvent(new Event('blur', {bubbles: true}));
+
+
+        if (typeof sendCanvasClick !== 'undefined') {
+            sendCanvasClick([{name: 'clickedX', value: roundedX}, {name: 'clickedY', value: yValue}, {
+                name: 'clickedR',
+                value: rVal
+            }]);
+        } else {
+            console.error('sendCanvasClick remoteCommand not found!');
         }
     }
 
@@ -284,14 +319,14 @@ class CoordinatePlane {
         const rInput = document.getElementById(CONFIG.SELECTORS.R_INPUT);
         const currentR = rInput ? parseFloat(rInput.value) : NaN;
 
-        if (!isNaN(currentR) && currentR >= 1 && currentR <= 4) {
+        if (!isNaN(currentR) && currentR > 2 && currentR < 5) {
             this.drawRegion(currentR);
             this.drawHistoryPoints();
         }
     }
 
     drawAxes() {
-        const { AXIS_COLOR, MARK_LENGTH } = CONFIG.CANVAS;
+        const {AXIS_COLOR, MARK_LENGTH} = CONFIG.CANVAS;
         this.ctx.strokeStyle = AXIS_COLOR;
         this.ctx.lineWidth = 2;
 
@@ -321,7 +356,7 @@ class CoordinatePlane {
     }
 
     drawAxisMarks() {
-        const { MARK_LENGTH, AXIS_COLOR } = CONFIG.CANVAS;
+        const {MARK_LENGTH, AXIS_COLOR} = CONFIG.CANVAS;
         const step = this.scale;
 
         for (let x = 0; x <= this.canvas.width; x += step) {
@@ -385,7 +420,7 @@ class CoordinatePlane {
         if (currentResults.length === 0) return;
 
         const rInput = document.getElementById(CONFIG.SELECTORS.R_INPUT);
-        const currentR = rInput ? parseFloat(rInput.value) : 1;
+        const currentR = rInput ? parseFloat(rInput.value) : 3;
         const baseScale = CONFIG.CANVAS.SCALE;
 
         currentResults.forEach(p => {
@@ -405,18 +440,6 @@ class CoordinatePlane {
     }
 }
 
-function selectX(x) {
-    const select = document.getElementById(CONFIG.SELECTORS.X_SELECT);
-    if (select) {
-        for (let i = 0; i < select.options.length; i++) {
-            if (parseFloat(select.options[i].value) === x) {
-                select.selectedIndex = i;
-                select.dispatchEvent(new Event('change', { bubbles: true }));
-                break;
-            }
-        }
-    }
-}
 
 function redrawCanvas() {
     if (window.coordinatePlane) {
@@ -431,16 +454,11 @@ function handleAjaxComplete() {
 document.addEventListener('DOMContentLoaded', () => {
     const rInput = document.getElementById(CONFIG.SELECTORS.R_INPUT);
     if (rInput && !rInput.value) {
-        rInput.value = '1';
-        rInput.dispatchEvent(new Event('input', { bubbles: true }));
+        rInput.value = '3';
+        rInput.dispatchEvent(new Event('input', {bubbles: true}));
+        rInput.dispatchEvent(new Event('blur', {bubbles: true}));
     }
 
-    document.querySelectorAll('.x-button').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const x = parseFloat(this.textContent);
-            selectX(x);
-        });
-    });
 
     new FormValidator();
     window.coordinatePlane = new CoordinatePlane(CONFIG.SELECTORS.CANVAS);
