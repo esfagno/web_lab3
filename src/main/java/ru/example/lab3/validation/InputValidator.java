@@ -1,36 +1,42 @@
 package ru.example.lab3.validation;
 
-import lombok.RequiredArgsConstructor;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.faces.application.FacesMessage;
+import jakarta.faces.component.UIComponent;
+import jakarta.faces.context.FacesContext;
+import jakarta.faces.validator.FacesValidator;
+import jakarta.faces.validator.Validator;
+import jakarta.faces.validator.ValidatorException;
 import ru.example.lab3.util.Constants;
 
-@RequiredArgsConstructor
-public class InputValidator {
-    private final double x;
-    private final double y;
-    private final double r;
+@FacesValidator("inputValidator")
+@RequestScoped
+public class InputValidator implements Validator<Double> {
 
-    public void validate() {
-        validateR();
-        validateX();
-        validateY();
-    }
-
-    private void validateR() {
-        if (r <= Constants.R_MIN || r >= Constants.R_MAX) {
-            throw ValidationException.forR();
+    @Override
+    public void validate(FacesContext context, UIComponent component, Double value) throws ValidatorException {
+        if (value == null) {
+            return;
         }
-    }
 
-    private void validateX() {
-        for (double validX : Constants.VALID_X_VALUES) {
-            if (Math.abs(x - validX) < Constants.VALIDATION_EPSILON) return;
-        }
-        throw ValidationException.forX();
-    }
+        String clientId = component.getClientId(context);
 
-    private void validateY() {
-        if (y <= Constants.Y_MIN || y >= Constants.Y_MAX) {
-            throw ValidationException.forY();
+        if (clientId.endsWith("yValue")) {
+            if (value <= Constants.Y_MIN || value >= Constants.Y_MAX) {
+                throw new ValidatorException(new FacesMessage(
+                        FacesMessage.SEVERITY_ERROR,
+                        "Y out of range",
+                        "Y must be in range (" + Constants.Y_MIN + ", " + Constants.Y_MAX + ")"
+                ));
+            }
+        } else if (clientId.endsWith("rValue")) {
+            if (value <= Constants.R_MIN || value >= Constants.R_MAX) {
+                throw new ValidatorException(new FacesMessage(
+                        FacesMessage.SEVERITY_ERROR,
+                        "R out of range",
+                        "R must be in range (" + Constants.R_MIN + ", " + Constants.R_MAX + ")"
+                ));
+            }
         }
     }
 }

@@ -9,7 +9,6 @@ import lombok.Getter;
 import lombok.Setter;
 import ru.example.lab3.model.HitResult;
 import ru.example.lab3.service.HitCheckService;
-import ru.example.lab3.validation.ValidationException;
 
 import java.io.Serializable;
 import java.util.Map;
@@ -39,52 +38,16 @@ public class MainBean implements Serializable {
     private ResultsManager resultsManager;
 
     public void checkPoint() {
-        FacesContext context = FacesContext.getCurrentInstance();
-
-        if (x == null || y == null || r == null) {
-            logger.warning("One or more fields are null after validation: x=" + x + ", y=" + y + ", r=" + r);
-            context.addMessage(null, new FacesMessage(
-                    FacesMessage.SEVERITY_ERROR,
-                    "Validation Error",
-                    "Please fill all required fields (X, Y, R)."
-            ));
-            submitted = false;
-            return;
-        }
-
-        if (y <= -5 || y >= 3) {
-            logger.warning("Y out of strict range: " + y);
-            context.addMessage(null, new FacesMessage(
-                    FacesMessage.SEVERITY_ERROR, "Validation Error", "Y must be in range (-5, 3)."
-            ));
-            submitted = false;
-            return;
-        }
-        if (r <= 2 || r >= 5) {
-            logger.warning("R out of strict range: " + r);
-            context.addMessage(null, new FacesMessage(
-                    FacesMessage.SEVERITY_ERROR, "Validation Error", "R must be in range (2, 5)."
-            ));
-            submitted = false;
-            return;
-        }
-
         try {
             HitResult result = service.checkHit(x, y, r);
             lastHit = result.isHit();
             submitted = true;
             resultsManager.addResult(result);
             logger.info("Result added: " + result);
-        } catch (ValidationException e) {
-            logger.warning("Validation failed: " + e.getMessage());
-            context.addMessage(null, new FacesMessage(
-                    FacesMessage.SEVERITY_ERROR, "Validation failed", e.getMessage()
-            ));
-            submitted = false;
         } catch (Exception e) {
             logger.severe("Unexpected error: " + e.getMessage());
             e.printStackTrace();
-            context.addMessage(null, new FacesMessage(
+            FacesContext.getCurrentInstance().addMessage(null, new FacesMessage(
                     FacesMessage.SEVERITY_ERROR, "Error", "An unexpected error occurred."
             ));
             submitted = false;

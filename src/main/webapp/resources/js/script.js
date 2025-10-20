@@ -13,6 +13,8 @@ const CONFIG = {
     VALIDATION: {
         Y_MIN: -5,
         Y_MAX: 3,
+        R_MIN: 2,
+        R_MAX: 5,
         X_VALUES: [-5, -4, -3, -2, -1, 0, 1, 2, 3]
     },
     SELECTORS: {
@@ -25,10 +27,9 @@ const CONFIG = {
     },
     TEXT: {
         VALIDATION: {
-            NUMBER_REQUIRED: 'Y должно быть числом',
-            RANGE_REQUIRED: 'Y должен быть строго в диапазоне (-5; 3)',
-            R_RANGE_REQUIRED: 'R должен быть строго в диапазоне (2; 5)',
-            R_NUMBER_REQUIRED: 'R должно быть числом'
+            NUMBER_REQUIRED: 'Значение должно быть числом',
+            Y_RANGE_REQUIRED: 'Y должен быть в диапазоне [-5, 3]',
+            R_RANGE_REQUIRED: 'R должен быть в диапазоне [2, 5]',
         }
     },
     TIMING: {
@@ -94,8 +95,27 @@ const Utils = {
         });
 
         return results;
+    },
+
+    enforceRange(input, min, max) {
+        const value = input.value.trim();
+        if (value === '') return;
+
+        const num = parseFloat(value);
+        if (isNaN(num)) return;
+
+        let clamped = num;
+        if (num < min) clamped = min;
+        if (num > max) clamped = max;
+
+        if (clamped !== num) {
+            input.value = clamped;
+            input.dispatchEvent(new Event('input', {bubbles: true}));
+            input.dispatchEvent(new Event('change', {bubbles: true}));
+        }
     }
 };
+
 
 class FormValidator {
     constructor() {
@@ -105,31 +125,42 @@ class FormValidator {
     }
 
     setupEventListeners() {
-        const debouncedY = Utils.debounce(this.validateY.bind(this), 300);
-        const debouncedR = Utils.debounce(this.validateR.bind(this), 300);
-        const form = document.getElementById(CONFIG.SELECTORS.FORM);
+        this.debouncedYValidate = Utils.debounce(() => this.validateGeneric(this.yInput, 'Y'), 300);
+        this.debouncedRValidate = Utils.debounce(() => this.validateGeneric(this.rInput, 'R'), 300);
 
         if (this.yInput) {
-            this.yInput.addEventListener('input', debouncedY);
-            this.yInput.addEventListener('blur', () => this.validateY());
+            this.yInput.addEventListener('input', this.debouncedYValidate);
+            this.yInput.addEventListener('blur', () => this.validateGeneric(this.yInput, 'Y'));
         }
 
         if (this.rInput) {
-            this.rInput.addEventListener('input', debouncedR);
-            this.rInput.addEventListener('blur', () => this.validateR());
+            this.rInput.addEventListener('input', () => {
+                this.Utils.enforceRange(this.rInput, CONFIG.VALIDATION.R_MIN, CONFIG.VALIDATION.R_MAX);
+                this.debouncedRValidate();
+            });
+
+            this.rInput.addEventListener('blur', () => {
+                this.Utils.enforceRange(this.rInput, CONFIG.VALIDATION.R_MIN, CONFIG.VALIDATION.R_MAX);
+                this.validateGeneric(this.rInput, 'R');
+            });
+
+            this.rInput.addEventListener('change', () => {
+                this.Utils.enforceRange(this.rInput, CONFIG.VALIDATION.R_MIN, CONFIG.VALIDATION.R_MAX);
+                this.validateGeneric(this.rInput, 'R');
+            });
         }
 
+        const form = document.getElementById(CONFIG.SELECTORS.FORM);
         if (form) {
             form.addEventListener('submit', (e) => {
-                if (!this.validateY() || !this.validateR()) {
+                if (!this.validateGeneric(this.yInput, 'Y') || !this.validateGeneric(this.rInput, 'R')) {
                     e.preventDefault();
                 }
             });
         }
     }
 
-    validateR() {
-        const input = this.rInput;
+    validateGeneric(input, type) {
         if (!input) return true;
 
         const value = input.value.trim();
@@ -141,42 +172,28 @@ class FormValidator {
             return true;
         }
 
-        if (!/^-?\d*\.?\d*$/.test(value) || isNaN(parseFloat(value))) {
-            this.showError(container, CONFIG.TEXT.VALIDATION.R_NUMBER_REQUIRED);
+        if (!/^-?\d*\.?\d+$/.test(value) || isNaN(parseFloat(value))) {
+            this.showError(input, container, CONFIG.TEXT.VALIDATION.NUMBER_REQUIRED);
             return false;
         }
 
         const num = parseFloat(value);
-        if (!(num > 2 && num < 5)) {
-            this.showError(container, CONFIG.TEXT.VALIDATION.R_RANGE_REQUIRED);
-            return false;
-        }
+        let min, max, rangeMessage;
 
-        input.classList.remove('input-error');
-        return true;
-    }
-
-    validateY() {
-        const input = this.yInput;
-        if (!input) return true;
-
-        const value = input.value.trim();
-        const container = input.closest('.input-container');
-        this.removeTooltip(container);
-
-        if (value === '') {
-            input.classList.remove('input-error');
+        if (type === 'Y') {
+            min = CONFIG.VALIDATION.Y_MIN;
+            max = CONFIG.VALIDATION.Y_MAX;
+            rangeMessage = CONFIG.TEXT.VALIDATION.Y_RANGE_REQUIRED;
+        } else if (type === 'R') {
+            min = CONFIG.VALIDATION.R_MIN;
+            max = CONFIG.VALIDATION.R_MAX;
+            rangeMessage = CONFIG.TEXT.VALIDATION.R_RANGE_REQUIRED;
+        } else {
             return true;
         }
 
-        if (!/^-?\d*\.?\d*$/.test(value) || isNaN(parseFloat(value))) {
-            this.showError(container, CONFIG.TEXT.VALIDATION.NUMBER_REQUIRED);
-            return false;
-        }
-
-        const num = parseFloat(value);
-        if (!Utils.isInRange(num, CONFIG.VALIDATION.Y_MIN, CONFIG.VALIDATION.Y_MAX)) {
-            this.showError(container, CONFIG.TEXT.VALIDATION.RANGE_REQUIRED);
+        if (!Utils.isInRange(num, min, max)) {
+            this.showError(input, container, rangeMessage);
             return false;
         }
 
@@ -184,9 +201,8 @@ class FormValidator {
         return true;
     }
 
-    showError(container, message) {
-        const input = this.yInput || this.rInput;
-        if (input) input.classList.add('input-error');
+    showError(input, container, message) {
+        input.classList.add('input-error');
 
         const tooltip = document.createElement('div');
         tooltip.className = 'input-tooltip';
@@ -194,7 +210,7 @@ class FormValidator {
         container.appendChild(tooltip);
 
         setTimeout(() => tooltip.classList.add('show'), CONFIG.TIMING.TOOLTIP_SHOW);
-        setTimeout(() => this.removeTooltip(tooltip), CONFIG.TIMING.TOOLTIP_HIDE);
+        setTimeout(() => this.removeTooltip(container), CONFIG.TIMING.TOOLTIP_HIDE);
     }
 
     removeTooltip(container) {
@@ -231,10 +247,46 @@ class CoordinatePlane {
         this.draw();
     }
 
+    validateValueByType(value, type) {
+        if (value === '') {
+            return {valid: true, message: null};
+        }
+
+        if (!/^-?\d*\.?\d+$/.test(value) || isNaN(parseFloat(value))) {
+            const message = CONFIG.TEXT.VALIDATION.NUMBER_REQUIRED;
+            return {valid: false, message};
+        }
+
+        const num = parseFloat(value);
+        let min, max, rangeMessage;
+
+        if (type === 'Y') {
+            min = CONFIG.VALIDATION.Y_MIN;
+            max = CONFIG.VALIDATION.Y_MAX;
+            rangeMessage = CONFIG.TEXT.VALIDATION.Y_RANGE_REQUIRED;
+        } else if (type === 'R') {
+            min = CONFIG.VALIDATION.R_MIN;
+            max = CONFIG.VALIDATION.R_MAX;
+            rangeMessage = CONFIG.TEXT.VALIDATION.R_RANGE_REQUIRED;
+        } else {
+            return {valid: false, message: "Неизвестный тип параметра"};
+        }
+
+        if (!Utils.isInRange(num, min, max)) {
+            return {valid: false, message: rangeMessage};
+        }
+
+        return {valid: true, message: null};
+    }
+
     handleClick(e) {
         const rect = this.canvas.getBoundingClientRect();
-        const xCanvas = e.clientX - rect.left;
-        const yCanvas = e.clientY - rect.top;
+        const xCss = e.clientX - rect.left;
+        const yCss = e.clientY - rect.top;
+
+        const xCanvas = (xCss / rect.width) * this.canvas.width;
+        const yCanvas = (yCss / rect.height) * this.canvas.height;
+
         const xGraph = (xCanvas - this.centerX) / this.scale;
         const yGraph = -(yCanvas - this.centerY) / this.scale;
 
@@ -246,8 +298,16 @@ class CoordinatePlane {
             return;
         }
 
-        if (!Utils.isInRange(yValue, CONFIG.VALIDATION.Y_MIN, CONFIG.VALIDATION.Y_MAX)) {
-            alert('Y должен быть строго в диапазоне (-5; 3)');
+        const yValidation = this.validateValueByType(yValue.toString(), 'Y');
+        if (!yValidation.valid) {
+            const yInput = document.getElementById(CONFIG.SELECTORS.Y_INPUT);
+            if (yInput) {
+                const container = yInput.closest('.input-container');
+                if (container) {
+                    const validator = new FormValidator();
+                    validator.showError(yInput, container, yValidation.message);
+                }
+            }
             return;
         }
 
@@ -259,17 +319,17 @@ class CoordinatePlane {
         }
 
         const rValStr = rInputElement.value.trim();
-        if (rValStr === '') {
-            alert('Сначала введите R');
+        const rValidation = this.validateValueByType(rValStr, 'R');
+        if (!rValidation.valid) {
+            const container = rInputElement.closest('.input-container');
+            if (container) {
+                const validator = new FormValidator();
+                validator.showError(rInputElement, container, rValidation.message);
+            }
             return;
         }
 
         const rVal = parseFloat(rValStr);
-        if (isNaN(rVal) || rVal <= 2 || rVal >= 5) {
-            alert('Введите корректное R (2..5)');
-            return;
-        }
-
 
         const xRadioGroupName = CONFIG.SELECTORS.X_RADIO_GROUP;
         const radioButtons = document.querySelectorAll(`input[name="${xRadioGroupName}"]`);
@@ -298,7 +358,6 @@ class CoordinatePlane {
         rInputElement.value = rVal;
         rInputElement.dispatchEvent(new Event('input', {bubbles: true}));
         rInputElement.dispatchEvent(new Event('blur', {bubbles: true}));
-
 
         if (typeof sendCanvasClick !== 'undefined') {
             sendCanvasClick([{name: 'clickedX', value: roundedX}, {name: 'clickedY', value: yValue}, {
@@ -440,7 +499,6 @@ class CoordinatePlane {
     }
 }
 
-
 function redrawCanvas() {
     if (window.coordinatePlane) {
         window.coordinatePlane.draw();
@@ -459,8 +517,6 @@ document.addEventListener('DOMContentLoaded', () => {
         rInput.dispatchEvent(new Event('blur', {bubbles: true}));
     }
 
-
-    new FormValidator();
     window.coordinatePlane = new CoordinatePlane(CONFIG.SELECTORS.CANVAS);
 
     redrawCanvas();

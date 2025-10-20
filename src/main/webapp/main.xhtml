@@ -35,9 +35,9 @@
                         </p:column>
 
                         <p:column headerText="Result" style="text-align:center;">
-                            <span style="color: #{res.hit ? 'green' : 'red'};">
-                                #{res.hit ? 'hit' : 'miss'}
-                            </span>
+                    <span style="color: #{res.hit ? 'green' : 'red'};">
+                        #{res.hit ? 'hit' : 'miss'}
+                    </span>
                         </p:column>
 
                         <p:column headerText="Time" style="text-align:center;">
@@ -47,76 +47,80 @@
                 </div>
             </div>
 
-            <canvas id="coordinatePlane" width="400" height="400"></canvas>
-        </div>
-
-        <h:form id="pointForm">
-            <div class="form-container">
-                <div class="input-container x-radio-group">
-                    <label>X:</label>
-                    <p:selectOneRadio id="xValue"
-                                      value="#{mainBean.x}"
-                                      layout="grid"
-                                      columns="3"
-                                      required="true"
-                                      requiredMessage="Пожалуйста, выберите X.">
-                        <f:selectItems value="#{[-5,-4,-3,-2,-1,0,1,2,3]}"/>
-                        <p:ajax event="change" oncomplete="redrawCanvas()"/>
-                    </p:selectOneRadio>
-                    <p:message for="xValue" display="text"/>
+            <div class="right-panel">
+                <div class="canvas-wrapper">
+                    <div class="canvas-wrapper-inner">
+                        <canvas id="coordinatePlane" width="400" height="400"></canvas>
+                    </div>
                 </div>
 
-                <div class="input-container">
-                    <label for="yValue">Y:</label>
-                    <p:inputNumber id="yValue"
-                                   value="#{mainBean.y}"
-                                   minValue="-5"
-                                   maxValue="3"
-                                   decimalPlaces="2"
-                                   placeholder="(-5 ... 3)"
-                                   required="true"
-                                   requiredMessage="Поле Y обязательно.">
-                        <f:validateDoubleRange minimum="#{-5}" maximum="#{3}"/>
-                        <p:ajax event="blur" oncomplete="redrawCanvas()"/>
-                    </p:inputNumber>
-                    <p:message for="yValue" display="text"/>
-                </div>
+                <h:form id="pointForm">
+                    <div class="form-container">
+                        <div class="input-container x-radio-group">
+                            <label>X:</label>
+                            <p:selectOneRadio id="xValue"
+                                              value="#{mainBean.x}"
+                                              layout="grid"
+                                              columns="3"
+                                              required="true"
+                                              requiredMessage="Пожалуйста, выберите X.">
+                                <f:selectItems value="#{[-5,-4,-3,-2,-1,0,1,2,3]}"/>
+                                <p:ajax event="change" oncomplete="redrawCanvas()"/>
+                            </p:selectOneRadio>
+                            <p:message for="xValue" display="text"/>
+                        </div>
 
-                <div class="input-container">
-                    <label for="rValue">R:</label>
-                    <p:inputNumber id="rValue"
-                                   value="#{mainBean.r}"
-                                   minValue="2"
-                                   maxValue="5"
-                                   decimalPlaces="2"
-                                   placeholder="(2 ... 5)"
-                                   required="true"
-                                   requiredMessage="Поле R обязательно.">
-                        <f:validateDoubleRange minimum="#{2}" maximum="#{5}"/>
-                        <p:ajax event="blur" oncomplete="redrawCanvas()"/>
-                    </p:inputNumber>
-                    <p:message for="rValue" display="text"/>
-                </div>
+                        <div class="narrow-inputs-wrapper">
+                            <div class="input-container narrow-input">
+                                <label for="pointForm:yValue">Y:</label>
+                                <p:inputNumber id="yValue"
+                                               value="#{mainBean.y}"
+                                               decimalPlaces="8"
+                                               placeholder="(-5 ... 3)"
+                                               required="true"
+                                               requiredMessage="Поле Y обязательно.">
+                                    <f:validator validatorId="inputValidator"/>
+                                    <p:ajax event="blur" oncomplete="redrawCanvas()"/>
+                                </p:inputNumber>
+                                <p:message for="yValue" display="text"/>
+                            </div>
 
-                <p:commandButton value="Submit"
-                                 action="#{mainBean.checkPoint}"
-                                 process="xValue yValue rValue"
-                                 update="messages, resultsTable"
-                                 oncomplete="handleAjaxComplete()"/>
+                            <div class="input-container narrow-input">
+                                <label for="pointForm:rValue">R:</label>
+                                <p:inputNumber id="rValue"
+                                               value="#{mainBean.r}"
+                                               decimalPlaces="8"
+                                               placeholder="(2 ... 5)"
+                                               required="true"
+                                               requiredMessage="Поле R обязательно.">
+                                    <f:validator validatorId="inputValidator"/>
+                                    <p:ajax event="blur" oncomplete="redrawCanvas()"/>
+                                </p:inputNumber>
+                                <p:message for="rValue" display="text"/>
+                            </div>
+                        </div>
 
-                <p:remoteCommand name="sendCanvasClick"
-                                 action="#{mainBean.handleCanvasClick}"
-                                 process="@this"
-                                 update="messages, resultsTable, pointForm:xValue, pointForm:yValue, pointForm:rValue"
-                                 oncomplete="handleAjaxComplete()"
-                                 global="false">
-                    <f:param name="clickedX" value=""/>
-                    <f:param name="clickedY" value=""/>
-                    <f:param name="clickedR" value=""/>
-                </p:remoteCommand>
+                        <p:commandButton value="Submit"
+                                         action="#{mainBean.checkPoint}"
+                                         process="@form"
+                                         update="messages, resultsTable"
+                                         oncomplete="handleAjaxComplete()"
+                                         styleClass="submit-button"/>
+
+                        <p:remoteCommand name="sendCanvasClick"
+                                         action="#{mainBean.handleCanvasClick}"
+                                         process="@this"
+                                         update="messages, resultsTable, pointForm:xValue, pointForm:yValue, pointForm:rValue"
+                                         oncomplete="handleAjaxComplete()"
+                                         global="false">
+                            <f:param name="clickedX" value=""/>
+                            <f:param name="clickedY" value=""/>
+                            <f:param name="clickedR" value=""/>
+                        </p:remoteCommand>
+                    </div>
+                </h:form>
             </div>
-        </h:form>
-
+        </div>
         <h:outputScript name="js/script.js"/>
 
         <script>
