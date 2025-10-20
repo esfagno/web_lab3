@@ -116,7 +116,6 @@ const Utils = {
     }
 };
 
-
 class FormValidator {
     constructor() {
         this.yInput = document.getElementById(CONFIG.SELECTORS.Y_INPUT);
@@ -135,17 +134,17 @@ class FormValidator {
 
         if (this.rInput) {
             this.rInput.addEventListener('input', () => {
-                this.Utils.enforceRange(this.rInput, CONFIG.VALIDATION.R_MIN, CONFIG.VALIDATION.R_MAX);
+                Utils.enforceRange(this.rInput, CONFIG.VALIDATION.R_MIN, CONFIG.VALIDATION.R_MAX);
                 this.debouncedRValidate();
             });
 
             this.rInput.addEventListener('blur', () => {
-                this.Utils.enforceRange(this.rInput, CONFIG.VALIDATION.R_MIN, CONFIG.VALIDATION.R_MAX);
+                Utils.enforceRange(this.rInput, CONFIG.VALIDATION.R_MIN, CONFIG.VALIDATION.R_MAX);
                 this.validateGeneric(this.rInput, 'R');
             });
 
             this.rInput.addEventListener('change', () => {
-                this.Utils.enforceRange(this.rInput, CONFIG.VALIDATION.R_MIN, CONFIG.VALIDATION.R_MAX);
+                Utils.enforceRange(this.rInput, CONFIG.VALIDATION.R_MIN, CONFIG.VALIDATION.R_MAX);
                 this.validateGeneric(this.rInput, 'R');
             });
         }
@@ -225,7 +224,6 @@ class FormValidator {
         }
     }
 }
-
 
 class CoordinatePlane {
     constructor(canvasId) {

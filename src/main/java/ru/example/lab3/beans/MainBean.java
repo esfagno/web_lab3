@@ -12,13 +12,11 @@ import ru.example.lab3.service.HitCheckService;
 
 import java.io.Serializable;
 import java.util.Map;
-import java.util.logging.Logger;
 
 @Named("mainBean")
 @ViewScoped
 public class MainBean implements Serializable {
 
-    private static final Logger logger = Logger.getLogger(MainBean.class.getName());
     @Getter
     @Setter
     private Double x;
@@ -43,9 +41,7 @@ public class MainBean implements Serializable {
             lastHit = result.isHit();
             submitted = true;
             resultsManager.addResult(result);
-            logger.info("Result added: " + result);
         } catch (Exception e) {
-            logger.severe("Unexpected error: " + e.getMessage());
             e.printStackTrace();
             FacesContext.getCurrentInstance().addMessage(null, new FacesMessage(
                     FacesMessage.SEVERITY_ERROR, "Error", "An unexpected error occurred."
@@ -74,7 +70,6 @@ public class MainBean implements Serializable {
 
                 checkPoint();
             } else {
-                logger.warning("One or more parameters from canvas click are null or invalid: x=" + xStr + ", y=" + yStr + ", r=" + rStr);
                 context.addMessage(null, new FacesMessage(
                         FacesMessage.SEVERITY_ERROR,
                         "Error",
@@ -82,7 +77,6 @@ public class MainBean implements Serializable {
                 ));
             }
         } catch (NumberFormatException e) {
-            logger.severe("Failed to parse coordinates from canvas click: " + e.getMessage());
             context.addMessage(null, new FacesMessage(
                     FacesMessage.SEVERITY_ERROR,
                     "Error",

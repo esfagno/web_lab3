@@ -3,18 +3,14 @@ package ru.example.lab3.service;
 import jakarta.enterprise.context.ApplicationScoped;
 import ru.example.lab3.model.HitResult;
 
-import java.util.logging.Logger;
 
 @ApplicationScoped
 public class HitCheckService {
 
-    private static final Logger logger = Logger.getLogger(HitCheckService.class.getName());
 
     public HitResult checkHit(double x, double y, double r) {
-        logger.info(() -> String.format("Checking hit: x=%.2f, y=%.2f, r=%.2f", x, y, r));
 
         boolean hit = isHit(x, y, r);
-        logger.info(() -> "Hit result: " + (hit ? "HIT" : "MISS"));
         return new HitResult(x, y, r, hit);
     }
 
