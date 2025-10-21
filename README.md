@@ -56,7 +56,3 @@
   - `hit` (boolean: попадание/промах)
   - `timestamp` (дата и время проверки)
 
-
-1. Запустите PostgreSQL в Docker:
-   ```bash
-   docker-compose up -d
